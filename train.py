@@ -32,7 +32,7 @@ def main():
     X_test_scaled = scaler.transform(X_test)
 
     # 3. Train the model
-    model = LinearRegression()
+    model = Ridge(alpha=1.0)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
