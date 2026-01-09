@@ -3,18 +3,15 @@ import json
 import pandas as pd
 import joblib
 
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.linear_model import Lasso
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Lasso
 from sklearn.feature_selection import SelectKBest, f_regression
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 def main():
-    # 1. Load the dataset
+    # 1. Load dataset
     red_path = "dataset/wine+quality/winequality-red.csv"
     white_path = "dataset/wine+quality/winequality-white.csv"
 
@@ -23,7 +20,7 @@ def main():
 
     data = pd.concat([red, white], axis=0)
 
-    # 2. Pre-processing & feature selection
+    # 2. Split features and target
     X = data.drop("quality", axis=1)
     y = data["quality"]
 
@@ -31,32 +28,28 @@ def main():
         X, y, test_size=0.2, random_state=42
     )
 
+    # 3. Standardization
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # 3. Train the model
-    # model = Ridge(alpha=1.0)
-    # model = RandomForestRegressor(
-    #     n_estimators=100,
-    #     random_state=42
-    # )
-    # model = LinearRegression()
+    # 4. Feature Selection
     selector = SelectKBest(score_func=f_regression, k=8)
-    X_train = selector.fit_transform(X_train, y_train)
-    X_test = selector.transform(X_test)
+    X_train_selected = selector.fit_transform(X_train_scaled, y_train)
+    X_test_selected = selector.transform(X_test_scaled)
+
+    # 5. Train model
     model = Lasso(alpha=0.1)
-    model.fit(X_train, y_train)
-    # model = LinearRegression()
-    # model.fit(X_train_scaled, y_train)
-    y_pred = model.predict(X_test_scaled)
+    model.fit(X_train_selected, y_train)
+
+    # 6. Evaluation
+    y_pred = model.predict(X_test_selected)
 
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
-    # 5. Save model & metrics
+    # 7. Save outputs
     os.makedirs("output", exist_ok=True)
-
     joblib.dump(model, "output/model.pkl")
 
     metrics = {
@@ -67,7 +60,7 @@ def main():
     with open("output/metrics.json", "w") as f:
         json.dump(metrics, f, indent=4)
 
-    # 6. Print metrics
+    # 8. Print metrics
     print("Model Evaluation Results")
     print("------------------------")
     print(f"MSE: {mse:.4f}")
