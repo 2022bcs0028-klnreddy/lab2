@@ -33,7 +33,11 @@ def main():
     X_test_scaled = scaler.transform(X_test)
 
     # 3. Train the model
-    model = Ridge(alpha=1.0)
+    # model = Ridge(alpha=1.0)
+    model = RandomForestRegressor(
+        n_estimators=100,
+        random_state=42
+    )
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
