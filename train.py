@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import joblib
 
+from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
