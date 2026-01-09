@@ -39,7 +39,11 @@ def main():
     #     n_estimators=100,
     #     random_state=42
     # )
-    model = LinearRegression()
+    # model = LinearRegression()
+    model = RandomForestRegressor(
+        n_estimators=100,
+        random_state=42
+    )
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
