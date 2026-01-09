@@ -40,8 +40,13 @@ def main():
     #     random_state=42
     # )
     # model = LinearRegression()
-    model = LinearRegression()
-    model.fit(X_train_scaled, y_train)
+    selector = SelectKBest(score_func=f_regression, k=8)
+    X_train = selector.fit_transform(X_train, y_train)
+    X_test = selector.transform(X_test)
+    model = Lasso(alpha=0.1)
+    model.fit(X_train, y_train)
+    # model = LinearRegression()
+    # model.fit(X_train_scaled, y_train)
     y_pred = model.predict(X_test_scaled)
 
     mse = mean_squared_error(y_test, y_pred)
