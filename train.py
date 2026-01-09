@@ -40,12 +40,9 @@ def main():
     #     random_state=42
     # )
     # model = LinearRegression()
-    model = RandomForestRegressor(
-        n_estimators=100,
-        random_state=42
-    )
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+    model = LinearRegression()
+    model.fit(X_train_scaled, y_train)
+    y_pred = model.predict(X_test_scaled)
 
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
