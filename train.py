@@ -6,9 +6,11 @@ import joblib
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import Lasso
+from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectKBest, f_regression
 
 
 def main():
