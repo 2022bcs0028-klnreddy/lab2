@@ -49,5 +49,7 @@ def predict_wine_quality(
     prediction = model.predict(features)
 
     return {
+        "name": "Karri Lakshmi Narasimha Reddy",
+        "roll_no": "2022BCS0028",
         "predicted_wine_quality": int(prediction[0])
     }
