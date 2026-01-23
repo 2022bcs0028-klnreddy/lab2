@@ -5,9 +5,9 @@ import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Lasso
 from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestRegressor
 
 
 def main():
@@ -38,13 +38,16 @@ def main():
     X_train_selected = selector.fit_transform(X_train_scaled, y_train)
     X_test_selected = selector.transform(X_test_scaled)
 
-    # 5. Train model
-    model = Lasso(alpha=0.1)
+    # 5. Train model (Random Forest - 200 trees)
+    model = RandomForestRegressor(
+        n_estimators=200,
+        random_state=42,
+        n_jobs=-1
+    )
     model.fit(X_train_selected, y_train)
 
     # 6. Evaluation
     y_pred = model.predict(X_test_selected)
-
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
