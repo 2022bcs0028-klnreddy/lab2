@@ -28,7 +28,7 @@ jobs:
 
       - name: Run training
         run: |
-          python scripts/train.py
+          python train.py
           # must create metrics.json and model file
 
       - name: Show metrics
@@ -47,7 +47,7 @@ jobs:
           name: model-artifacts
           path: |
             metrics.json
-            model/
+            output/
 
     outputs:
       mse: ${{ steps.metrics.outputs.MSE }}
