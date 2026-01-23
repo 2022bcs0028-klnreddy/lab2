@@ -32,21 +32,20 @@ jobs:
           # must create metrics.json and model file
 
       - name: Show metrics
-        run: cat metrics.json
+        run: cat output/metrics.json
 
       # Save metrics for next job
       - name: Extract metrics
         id: metrics
         run: |
-          echo "MSE=$(jq -r '."Mean Squared Error"' metrics.json)" >> $GITHUB_OUTPUT
-          echo "R2=$(jq -r '."R2 Score"' metrics.json)" >> $GITHUB_OUTPUT
+          echo "MSE=$(jq -r '."Mean Squared Error"' output/metrics.json)" >> $GITHUB_OUTPUT
+          echo "R2=$(jq -r '."R2 Score"' output/metrics.json)" >> $GITHUB_OUTPUT
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: model-artifacts
           path: |
-            metrics.json
             output/
 
     outputs:
