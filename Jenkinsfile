@@ -16,18 +16,15 @@ pipeline {
 
         stage('Create Virtual Environment') {
             steps {
-                sh '''
-                python3 -m venv venv
-                '''
+                sh 'python3 -m venv venv'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh '''
-                source venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
+                ./venv/bin/pip install --upgrade pip
+                ./venv/bin/pip install -r requirements.txt
                 '''
             }
         }
@@ -35,8 +32,7 @@ pipeline {
         stage('Run Training Script') {
             steps {
                 sh '''
-                source venv/bin/activate
-                python3 train.py
+                ./venv/bin/python train.py
                 '''
             }
         }
