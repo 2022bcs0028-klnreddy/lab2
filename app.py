@@ -53,3 +53,7 @@ def predict_wine_quality(
         "roll_no": "2022BCS0028",
         "predicted_wine_quality": int(prediction[0])
     }
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
