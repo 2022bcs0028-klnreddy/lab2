@@ -86,11 +86,11 @@ pipeline {
                 sh '''
                 echo "Sending valid request..."
 
-                RESPONSE=$(docker exec $CONTAINER_NAME sh -c '
+                RESPONSE=$(cat tests/valid_input.json | docker exec -i $CONTAINER_NAME sh -c '
                     curl -s -w "\\n%{http_code}" -X POST \
                     http://localhost:8000/predict \
                     -H "Content-Type: application/json" \
-                    -d @/tests/valid_input.json
+                    -d @-
                 ')
 
                 BODY=$(echo "$RESPONSE" | head -n 1)
@@ -122,11 +122,11 @@ pipeline {
                 sh '''
                 echo "Sending invalid request..."
 
-                RESPONSE=$(docker exec $CONTAINER_NAME sh -c '
+                RESPONSE=$(cat tests/invalid_input.json | docker exec -i $CONTAINER_NAME sh -c '
                     curl -s -w "\\n%{http_code}" -X POST \
                     http://localhost:8000/predict \
                     -H "Content-Type: application/json" \
-                    -d @/tests/invalid_input.json
+                    -d @-
                 ')
 
                 BODY=$(echo "$RESPONSE" | head -n 1)
