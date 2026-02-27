@@ -44,7 +44,7 @@ pipeline {
                 for i in {1..15}
                 do
                     sleep 2
-                    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/health || true)
+                    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://host.docker.internal:$PORT/health || true)
 
                     if [ "$STATUS" = "200" ]; then
                         echo "Service is ready!"
@@ -66,7 +66,7 @@ pipeline {
                 sh '''
                 echo "Sending valid request..."
 
-                RESPONSE=$(curl -s -w "\\n%{http_code}" -X POST http://localhost:$PORT/predict \
+                RESPONSE=$(curl -s -w "\\n%{http_code}" -X POST http://host.docker.internal:$PORT/predict \
                     -H "Content-Type: application/json" \
                     -d @tests/valid_input.json)
 
@@ -98,7 +98,7 @@ pipeline {
                 sh '''
                 echo "Sending invalid request..."
 
-                RESPONSE=$(curl -s -w "\\n%{http_code}" -X POST http://localhost:$PORT/predict \
+                RESPONSE=$(curl -s -w "\\n%{http_code}" -X POST http://host.docker.internal:$PORT/predict \
                     -H "Content-Type: application/json" \
                     -d @tests/invalid_input.json)
 
