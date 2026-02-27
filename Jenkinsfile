@@ -60,7 +60,17 @@ pipeline {
                 '''
             }
         }
+        stage('Debug Container Files') {
+            steps {
+                sh '''
+                echo "Listing container root..."
+                docker exec $CONTAINER_NAME ls /
 
+                echo "Listing /tests directory..."
+                docker exec $CONTAINER_NAME ls /tests || true
+                '''
+            }
+        }
         // -----------------------------
         // Stage 4: Valid Inference Test
         stage('Send Valid Inference Request') {
