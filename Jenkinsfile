@@ -28,7 +28,10 @@ pipeline {
             steps {
                 sh '''
                 echo "Starting container..."
-                docker run -d --name $CONTAINER_NAME $IMAGE_NAME
+                docker run -d \
+                --name $CONTAINER_NAME \
+                -v $PWD/tests:/tests \
+                $IMAGE_NAME
                 '''
             }
         }
