@@ -71,6 +71,14 @@ pipeline {
                 '''
             }
         }
+        stage('Debug Workspace') {
+            steps {
+                sh '''
+                echo "Workspace path: $WORKSPACE"
+                ls -R $WORKSPACE
+                '''
+            }
+        }
         // -----------------------------
         // Stage 4: Valid Inference Test
         stage('Send Valid Inference Request') {
