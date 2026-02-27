@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "scarxlynx/ml-model:latest"
         CONTAINER_NAME = "wine_test_container"
-        PORT = "8000"
+        INTERNAL_PORT = "8000"
     }
 
     stages {
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 sh '''
                 echo "Starting container..."
-                docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
+                docker run -d --name $CONTAINER_NAME $IMAGE_NAME
                 '''
             }
         }
@@ -41,10 +41,13 @@ pipeline {
                 sh '''
                 echo "Waiting for API to be ready..."
 
-                for i in {1..15}
+                for i in {1..20}
                 do
                     sleep 2
-                    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://host.docker.internal:$PORT/health || true)
+
+                    STATUS=$(docker exec $CONTAINER_NAME \
+                        curl -s -o /dev/null -w "%{http_code}" \
+                        http://localhost:$INTERNAL_PORT/health || true)
 
                     if [ "$STATUS" = "200" ]; then
                         echo "Service is ready!"
@@ -66,9 +69,11 @@ pipeline {
                 sh '''
                 echo "Sending valid request..."
 
-                RESPONSE=$(curl -s -w "\\n%{http_code}" -X POST http://host.docker.internal:$PORT/predict \
+                RESPONSE=$(docker exec $CONTAINER_NAME \
+                    curl -s -w "\\n%{http_code}" -X POST \
+                    http://localhost:$INTERNAL_PORT/predict \
                     -H "Content-Type: application/json" \
-                    -d @tests/valid_input.json)
+                    -d @/tests/valid_input.json)
 
                 BODY=$(echo "$RESPONSE" | head -n 1)
                 STATUS=$(echo "$RESPONSE" | tail -n 1)
@@ -81,9 +86,13 @@ pipeline {
                     exit 1
                 fi
 
-                echo "$BODY" | grep -q "prediction" || { echo "Prediction field missing!"; exit 1; }
+                echo "$BODY" | grep -q "prediction" || { 
+                    echo "Prediction field missing!"; exit 1; 
+                }
 
-                echo "$BODY" | grep -E -q '[0-9]' || { echo "Prediction is not numeric!"; exit 1; }
+                echo "$BODY" | grep -E -q '[0-9]' || { 
+                    echo "Prediction is not numeric!"; exit 1; 
+                }
 
                 echo "Valid inference test passed."
                 '''
@@ -98,9 +107,11 @@ pipeline {
                 sh '''
                 echo "Sending invalid request..."
 
-                RESPONSE=$(curl -s -w "\\n%{http_code}" -X POST http://host.docker.internal:$PORT/predict \
+                RESPONSE=$(docker exec $CONTAINER_NAME \
+                    curl -s -w "\\n%{http_code}" -X POST \
+                    http://localhost:$INTERNAL_PORT/predict \
                     -H "Content-Type: application/json" \
-                    -d @tests/invalid_input.json)
+                    -d @/tests/invalid_input.json)
 
                 BODY=$(echo "$RESPONSE" | head -n 1)
                 STATUS=$(echo "$RESPONSE" | tail -n 1)
@@ -113,7 +124,9 @@ pipeline {
                     exit 1
                 fi
 
-                echo "$BODY" | grep -qi "error\\|detail" || { echo "No meaningful error message!"; exit 1; }
+                echo "$BODY" | grep -qi "error\\|detail" || { 
+                    echo "No meaningful error message!"; exit 1; 
+                }
 
                 echo "Invalid request test passed."
                 '''
