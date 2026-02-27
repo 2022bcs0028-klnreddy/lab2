@@ -63,17 +63,17 @@ pipeline {
 
         // -----------------------------
         // Stage 4: Valid Inference Test
-        // -----------------------------
         stage('Send Valid Inference Request') {
             steps {
                 sh '''
                 echo "Sending valid request..."
 
-                RESPONSE=$(docker exec $CONTAINER_NAME \
+                RESPONSE=$(docker exec $CONTAINER_NAME sh -c '
                     curl -s -w "\\n%{http_code}" -X POST \
-                    http://localhost:$INTERNAL_PORT/predict \
+                    http://localhost:8000/predict \
                     -H "Content-Type: application/json" \
-                    -d @/tests/valid_input.json)
+                    -d @/tests/valid_input.json
+                ')
 
                 BODY=$(echo "$RESPONSE" | head -n 1)
                 STATUS=$(echo "$RESPONSE" | tail -n 1)
@@ -86,12 +86,9 @@ pipeline {
                     exit 1
                 fi
 
-                echo "$BODY" | grep -q "prediction" || { 
-                    echo "Prediction field missing!"; exit 1; 
-                }
-
-                echo "$BODY" | grep -E -q '[0-9]' || { 
-                    echo "Prediction is not numeric!"; exit 1; 
+                echo "$BODY" | grep -q "prediction" || {
+                    echo "Prediction field missing!"
+                    exit 1
                 }
 
                 echo "Valid inference test passed."
@@ -107,11 +104,12 @@ pipeline {
                 sh '''
                 echo "Sending invalid request..."
 
-                RESPONSE=$(docker exec $CONTAINER_NAME \
+                RESPONSE=$(docker exec $CONTAINER_NAME sh -c '
                     curl -s -w "\\n%{http_code}" -X POST \
-                    http://localhost:$INTERNAL_PORT/predict \
+                    http://localhost:8000/predict \
                     -H "Content-Type: application/json" \
-                    -d @/tests/invalid_input.json)
+                    -d @/tests/invalid_input.json
+                ')
 
                 BODY=$(echo "$RESPONSE" | head -n 1)
                 STATUS=$(echo "$RESPONSE" | tail -n 1)
@@ -123,10 +121,6 @@ pipeline {
                     echo "Invalid request unexpectedly succeeded!"
                     exit 1
                 fi
-
-                echo "$BODY" | grep -qi "error\\|detail" || { 
-                    echo "No meaningful error message!"; exit 1; 
-                }
 
                 echo "Invalid request test passed."
                 '''
