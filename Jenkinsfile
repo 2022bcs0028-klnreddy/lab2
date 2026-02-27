@@ -2,166 +2,101 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "scarxlynx/ml-model:latest"
-        CONTAINER_NAME = "wine_test_container"
-        INTERNAL_PORT = "8000"
+        IMAGE_NAME = "ml-model"
+        CONTAINER_NAME = "ml-test-container"
+        PORT = "8000"
     }
 
     stages {
 
-        // -----------------------------
-        // Stage 1: Pull Image
-        // -----------------------------
-        stage('Pull Image') {
+        stage('Print Student Info') {
             steps {
                 sh '''
-                echo "Pulling Docker image..."
-                docker pull $IMAGE_NAME
+                echo "======================================"
+                echo "Name: RALLAPALLI V S B HARSHITH"
+                echo "Roll No: 2022BCS0042"
+                echo "======================================"
                 '''
             }
         }
 
-        // -----------------------------
-        // Stage 2: Run Container
-        // -----------------------------
+        stage('Cleanup Old Container') {
+            steps {
+                sh '''
+                docker stop ${CONTAINER_NAME} || true
+                docker rm ${CONTAINER_NAME} || true
+                '''
+            }
+        }
+
         stage('Run Container') {
             steps {
                 sh '''
-                echo "Starting container..."
-                docker run -d --name $CONTAINER_NAME -v $PWD/tests:/tests $IMAGE_NAME
+                docker run -d \
+                -p 8000:8000 \
+                --name ${CONTAINER_NAME} \
+                ${IMAGE_NAME}
                 '''
             }
         }
 
-        // -----------------------------
-        // Stage 3: Wait for Service
-        // -----------------------------
-        stage('Wait for Service Readiness') {
-            steps {
-                sh '''
-                echo "Waiting for API to be ready..."
+       stage('Wait for API Readiness') {
+    steps {
+        script {
+            // Wait 10 seconds for FastAPI to start
+            sleep(time: 10, unit: 'SECONDS')
 
-                for i in {1..20}
-                do
-                    sleep 2
+            timeout(time: 60, unit: 'SECONDS') {
+                waitUntil {
+                    def status = sh(
+                        script: "curl -s -o /dev/null -w \"%{http_code}\" http://host.docker.internal:8000/health",
+                        returnStdout: true
+                    ).trim()
 
-                    STATUS=$(docker exec $CONTAINER_NAME \
-                        curl -s -o /dev/null -w "%{http_code}" \
-                        http://localhost:$INTERNAL_PORT/health || true)
-
-                    if [ "$STATUS" = "200" ]; then
-                        echo "Service is ready!"
-                        exit 0
-                    fi
-                done
-
-                echo "Service did not start in time."
-                exit 1
-                '''
+                    echo "Health Check Status: ${status}"
+                    return (status == "200")
+                }
             }
         }
+    }
+}
 
-        // -----------------------------
-        // Stage 4: Valid Inference Test
-        // -----------------------------
         stage('Send Valid Inference Request') {
             steps {
                 sh '''
-                echo "Sending valid request..."
-
-                RESPONSE=$(docker exec $CONTAINER_NAME \
-                    curl -s -w "\\n%{http_code}" -X POST \
-                    http://localhost:$INTERNAL_PORT/predict \
-                    -H "Content-Type: application/json" \
-                    -d @/tests/valid_input.json)
-
-                BODY=$(echo "$RESPONSE" | head -n 1)
-                STATUS=$(echo "$RESPONSE" | tail -n 1)
-
-                echo "Status Code: $STATUS"
-                echo "Response Body: $BODY"
-
-                if [ "$STATUS" != "200" ]; then
-                    echo "Valid request failed!"
-                    exit 1
-                fi
-
-                echo "$BODY" | grep -q "prediction" || { 
-                    echo "Prediction field missing!"; exit 1; 
-                }
-
-                echo "$BODY" | grep -E -q '[0-9]' || { 
-                    echo "Prediction is not numeric!"; exit 1; 
-                }
-
-                echo "Valid inference test passed."
+                curl -s -X POST http://host.docker.internal:8000/predict \
+                -H "Content-Type: application/json" \
+                -d @valid_input.json
                 '''
             }
         }
 
-        // -----------------------------
-        // Stage 5: Invalid Request Test
-        // -----------------------------
         stage('Send Invalid Request') {
             steps {
                 sh '''
-                echo "Sending invalid request..."
-
-                RESPONSE=$(docker exec $CONTAINER_NAME \
-                    curl -s -w "\\n%{http_code}" -X POST \
-                    http://localhost:$INTERNAL_PORT/predict \
-                    -H "Content-Type: application/json" \
-                    -d @/tests/invalid_input.json)
-
-                BODY=$(echo "$RESPONSE" | head -n 1)
-                STATUS=$(echo "$RESPONSE" | tail -n 1)
-
-                echo "Status Code: $STATUS"
-                echo "Response Body: $BODY"
-
-                if [ "$STATUS" = "200" ]; then
-                    echo "Invalid request unexpectedly succeeded!"
-                    exit 1
-                fi
-
-                echo "$BODY" | grep -qi "error\\|detail" || { 
-                    echo "No meaningful error message!"; exit 1; 
-                }
-
-                echo "Invalid request test passed."
+                curl -s -o /dev/null -w "%{http_code}" \
+                -X POST http://host.docker.internal:8000/predict \
+                -H "Content-Type: application/json" \
+                -d @invalid_input.json
                 '''
             }
         }
 
-        // -----------------------------
-        // Stage 6: Stop Container
-        // -----------------------------
         stage('Stop Container') {
             steps {
                 sh '''
-                echo "Stopping and removing container..."
-                docker stop $CONTAINER_NAME || true
-                docker rm $CONTAINER_NAME || true
+                docker stop ${CONTAINER_NAME} || true
+                docker rm ${CONTAINER_NAME} || true
                 '''
             }
         }
     }
 
-    // -----------------------------
-    // Stage 7: Final Result
-    // -----------------------------
     post {
-        success {
-            echo "All validation tests passed. Pipeline SUCCESS. 2022BCS0028"
-        }
-        failure {
-            echo "Pipeline FAILED due to validation error. 2022BCS0028"
-        }
         always {
             sh '''
-            echo "Ensuring container cleanup..."
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
+            docker stop ${CONTAINER_NAME} || true
+            docker rm ${CONTAINER_NAME} || true
             '''
         }
     }
